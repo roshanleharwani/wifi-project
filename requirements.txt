@@ -1,0 +1,4 @@
+requests
+pywifi
+colorama
+urllib3
