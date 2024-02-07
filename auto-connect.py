@@ -1,3 +1,4 @@
+import sys
 import requests
 import time
 import pywifi
@@ -8,6 +9,9 @@ import subprocess
 import platform
 from urllib3.exceptions import InsecureRequestWarning
 import os
+import keyboard
+
+should_exit = False
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 requests.packages.urllib3.disable_warnings()
@@ -47,7 +51,7 @@ def read_credentials():
         password = input('Enter your Wi-Fi password: ')
         save_credentials(ssid,id,password)
         return read_credentials()
-    
+  
 try: ssid = read_credentials()['ssid']
 except:register(save_credentials)
 
@@ -68,7 +72,7 @@ def connect_to_open_wifi(ssid):
             profile = iface.add_network_profile(profile_info)
 
             iface.connect(profile)
-            time.sleep(5)
+            time.sleep(3)
 
             if iface.status() == const.IFACE_CONNECTED:
                 print(colorama.Fore.YELLOW+f"INFO - Connected to {ssid}")
@@ -86,14 +90,13 @@ def check_internet():
         return False
     
 def connect(read_credentials, connect_to_open_wifi):
-    if check_internet():
-        print(colorama.Fore.GREEN + 'INFO - Online')
     while True:
         if check_internet():
-            time.sleep(5)  # Sleep for 5 seconds before checking again
+            time.sleep(3)  # Sleep for 5 seconds before checking again
         else:
             credentials = read_credentials()
             print(colorama.Fore.YELLOW + 'INFO - Not Connected -Initiating internet connection...')
+            print(colorama.Fore.YELLOW+"[*] If Browser window pop up close that tab [*]")
             connect_to_open_wifi(credentials['ssid'])
             break
 
@@ -114,9 +117,23 @@ def connect(read_credentials, connect_to_open_wifi):
 # Check the response
     if response.status_code == 200:
         print(colorama.Fore.GREEN+'INFO - Online')
+        print(colorama.Fore.RED+"INFO - Press 0 to Sign out.")
     else:
         print(colorama.Fore.RED+f'ERROR - while submitting form. Status code: {response.status_code}')
         print(response.text)
+
+def disconnect():
+    global should_exit
+    url = 'https://hfw.vitap.ac.in:8090/httpclient.html'
+    credentials = read_credentials()
+    form_data = {
+        'mode': 193,
+        'username': credentials['id'],
+        'password': credentials['pass'],
+    }
+    requests.post(url, data=form_data, verify=False)
+    print(colorama.Fore.RED + "WARNING - SIGNING OUT")
+    should_exit = True 
 
 def internet():
     try:
@@ -127,11 +144,24 @@ def internet():
         connect(read_credentials, connect_to_open_wifi)
 if check_internet():
     print(colorama.Fore.GREEN+'INFO - Online')
-while True:
+    print(colorama.Fore.RED+'INFO - Press 0 to Sign out.')
+
+
+def on_key_event(event):
+    if event.name == '0':
+        disconnect()
+        
+
+# Register the callback function
+keyboard.on_press(on_key_event)
+
+
+while not should_exit:
     try:
         internet()
-        time.sleep(4)
+        time.sleep(2)
     except:
         print(colorama.Fore.YELLOW+'INFO - Waiting to Resolve DNS')
         connect_to_open_wifi(ssid)
         time.sleep(5)
+sys.exit()
