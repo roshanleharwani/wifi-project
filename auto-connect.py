@@ -7,15 +7,32 @@ import json
 import subprocess
 import platform
 from urllib3.exceptions import InsecureRequestWarning
+import os
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 requests.packages.urllib3.disable_warnings()
 
-def save_credentials(id,password):
+def save_credentials(ssid,id,password):
     with open('cred.json','w') as file:
-        credentials = {'id':id,'pass':password}
+        credentials = {'ssid':ssid,'id':id,'pass':password}
         json.dump(credentials,file)
         print(colorama.Fore.GREEN+'INFO - Credentials Saved!!')
+
+def credentialsPresent():
+    path = os.path.join(os.getcwd(),'cred.json')
+    return os.path.exists(path)
+
+def register(save_credentials):
+    print(colorama.Fore.YELLOW+"Register for AutoConnect:")
+    print(colorama.Fore.YELLOW+'[*] One Time Credential Submission\n')
+    ssid = input('Enter Your Hostel Wi-Fi name: ')
+    id = input('Enter your Registration Number: ')
+    password = input('Enter your Wi-Fi password: ')
+    save_credentials(ssid,id,password)
+    print(colorama.Fore.GREEN+"Registered Successfully\n ")
+
+if not credentialsPresent():
+    register(save_credentials)
 
 def read_credentials():
     try:
@@ -25,10 +42,13 @@ def read_credentials():
     except FileNotFoundError:
         print(colorama.Fore.RED+'ERROR - Credentials Not Found !!')
         print(colorama.Fore.YELLOW+'[*] One Time Credential Submission\n')
+        ssid = input('Enter your Hostel Wi-Fi name: ')
         id = input('Enter your Registration Number: ')
         password = input('Enter your Wi-Fi password: ')
-        save_credentials(id,password)
+        save_credentials(ssid,id,password)
         return read_credentials()
+try: ssid = read_credentials()['ssid']
+except:register(save_credentials)
 
 def connect_to_open_wifi(ssid):
     wifi = pywifi.PyWiFi()
@@ -71,8 +91,9 @@ def connect(read_credentials, connect_to_open_wifi):
         if check_internet():
             time.sleep(5)  # Sleep for 5 seconds before checking again
         else:
+            credentials = read_credentials()
             print(colorama.Fore.YELLOW + 'INFO - Not Connected -Initiating internet connection...')
-            connect_to_open_wifi('VITAP-HOSTEL')
+            connect_to_open_wifi(credentials['ssid'])
             break
 
     url = 'https://hfw.vitap.ac.in:8090/httpclient.html'
@@ -111,5 +132,5 @@ while True:
         time.sleep(4)
     except:
         print(colorama.Fore.YELLOW+'INFO - Waiting to Resolve DNS')
-        connect_to_open_wifi('VITAP-HOSTEL')
+        connect_to_open_wifi(ssid)
         time.sleep(5)
