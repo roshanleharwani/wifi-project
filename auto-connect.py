@@ -47,6 +47,7 @@ def read_credentials():
         password = input('Enter your Wi-Fi password: ')
         save_credentials(ssid,id,password)
         return read_credentials()
+    
 try: ssid = read_credentials()['ssid']
 except:register(save_credentials)
 
