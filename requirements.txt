@@ -2,3 +2,4 @@ requests
 pywifi
 colorama
 urllib3
+keyboard

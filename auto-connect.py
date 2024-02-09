@@ -72,7 +72,7 @@ def connect_to_open_wifi(ssid):
             profile = iface.add_network_profile(profile_info)
 
             iface.connect(profile)
-            time.sleep(3)
+            time.sleep(6)
 
             if iface.status() == const.IFACE_CONNECTED:
                 print(colorama.Fore.YELLOW+f"INFO - Connected to {ssid}")
@@ -80,7 +80,20 @@ def connect_to_open_wifi(ssid):
                 print(colorama.Fore.RED+f"ERROR - Failed to connect to {ssid}")
 
             break
+def is_connected():
+    wifi = pywifi.PyWiFi()
+    iface = wifi.interfaces()[0] 
+
     
+    if iface.status() in [pywifi.const.IFACE_DISCONNECTED, pywifi.const.IFACE_INACTIVE]:
+        return False
+    
+    if iface.status() in [pywifi.const.IFACE_SCANNING, pywifi.const.IFACE_CONNECTING]:
+        time.sleep(2) 
+        if iface.status() != pywifi.const.IFACE_CONNECTED:
+            return False
+    return True
+
 def check_internet():
     try:
         null_device = '/dev/null' if platform.system().lower() != 'windows' else 'NUL'
@@ -92,13 +105,17 @@ def check_internet():
 def connect(read_credentials, connect_to_open_wifi):
     while True:
         if check_internet():
-            time.sleep(3)  # Sleep for 5 seconds before checking again
+            time.sleep(3)  
         else:
             credentials = read_credentials()
             print(colorama.Fore.YELLOW + 'INFO - Not Connected -Initiating internet connection...')
             print(colorama.Fore.YELLOW+"[*] If Browser window pop up close that tab [*]")
-            connect_to_open_wifi(credentials['ssid'])
-            break
+            if is_connected():
+                break
+            else:
+                connect_to_open_wifi(credentials['ssid'])
+                break
+            
 
     url = 'https://hfw.vitap.ac.in:8090/httpclient.html'
 
@@ -108,16 +125,14 @@ def connect(read_credentials, connect_to_open_wifi):
     'mode':191,
     'username': credentials['id'],
     'password': credentials['pass'],
-}
+        }
 
-# Send a POST request to submit the form
     
     response = requests.post(url, data=form_data,verify=False,)
 
-# Check the response
     if response.status_code == 200:
         print(colorama.Fore.GREEN+'INFO - Online')
-        print(colorama.Fore.RED+"INFO - Press 0 to Sign out.")
+        print(colorama.Fore.RED+"INFO - Press F7 to Sign out.")
     else:
         print(colorama.Fore.RED+f'ERROR - while submitting form. Status code: {response.status_code}')
         print(response.text)
@@ -144,11 +159,11 @@ def internet():
         connect(read_credentials, connect_to_open_wifi)
 if check_internet():
     print(colorama.Fore.GREEN+'INFO - Online')
-    print(colorama.Fore.RED+'INFO - Press 0 to Sign out.')
+    print(colorama.Fore.RED+'INFO - Press F7 to Sign out.')
 
 
 def on_key_event(event):
-    if event.name == '0':
+    if event.name == 'f7':
         disconnect()
         
 
