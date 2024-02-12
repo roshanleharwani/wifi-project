@@ -3,3 +3,4 @@ pywifi
 colorama
 urllib3
 keyboard
+lxml

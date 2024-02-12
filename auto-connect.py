@@ -10,6 +10,7 @@ import platform
 from urllib3.exceptions import InsecureRequestWarning
 import os
 import keyboard
+from bs4 import BeautifulSoup
 
 should_exit = False
 
@@ -26,14 +27,18 @@ def credentialsPresent():
     path = os.path.join(os.getcwd(),'cred.json')
     return os.path.exists(path)
 
-def register(save_credentials):
-    print(colorama.Fore.YELLOW+"Register for AutoConnect:")
-    print(colorama.Fore.YELLOW+'[*] One Time Credential Submission\n')
+def prompt(save_credentials):
     ssid = input('Enter Your Hostel Wi-Fi name: ')
     id = input('Enter your Registration Number: ')
     password = input('Enter your Wi-Fi password: ')
     save_credentials(ssid,id,password)
     print(colorama.Fore.GREEN+"Registered Successfully\n ")
+
+
+def register(save_credentials):
+    print(colorama.Fore.YELLOW+"Register for AutoConnect:")
+    print(colorama.Fore.YELLOW+'[*] One Time Credential Submission\n')
+    prompt(save_credentials)
 
 if not credentialsPresent():
     register(save_credentials)
@@ -51,9 +56,12 @@ def read_credentials():
         password = input('Enter your Wi-Fi password: ')
         save_credentials(ssid,id,password)
         return read_credentials()
-  
+
+
+    
 try: ssid = read_credentials()['ssid']
 except:register(save_credentials)
+
 
 def connect_to_open_wifi(ssid):
     wifi = pywifi.PyWiFi()
@@ -96,7 +104,6 @@ def is_connected():
 
 def check_internet():
     try:
-        null_device = '/dev/null' if platform.system().lower() != 'windows' else 'NUL'
         subprocess.run(['ping', '-n', '2', 'google.com'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
         return True
     except subprocess.CalledProcessError:
@@ -130,12 +137,28 @@ def connect(read_credentials, connect_to_open_wifi):
     
     response = requests.post(url, data=form_data,verify=False,)
 
-    if response.status_code == 200:
+    content = response.text
+    soup = BeautifulSoup(content,'xml')
+
+    message = soup.find('message').text.strip()
+
+    if message == 'You are signed in as {username}':
         print(colorama.Fore.GREEN+'INFO - Online')
         print(colorama.Fore.RED+"INFO - Press F7 to Sign out.")
+    elif message == 'Login failed. Invalid user name/password. Please contact the administrator.':
+        print(colorama.Fore.RED+"Credentials are not valid !")
+        prompt(save_credentials)
     else:
-        print(colorama.Fore.RED+f'ERROR - while submitting form. Status code: {response.status_code}')
-        print(response.text)
+        print(colorama.Fore.RED+f"\n{message}\n")
+        time.sleep(4)
+        quit()
+
+    # if response.status_code == 200:
+    #     print(colorama.Fore.GREEN+'INFO - Online')
+    #     print(colorama.Fore.RED+"INFO - Press F7 to Sign out.")
+    # else:
+    #     print(colorama.Fore.RED+f'ERROR - while submitting form. Status code: {response.status_code}')
+    #     print(response.text)
 
 def disconnect():
     global should_exit
