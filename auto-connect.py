@@ -11,7 +11,7 @@ from urllib3.exceptions import InsecureRequestWarning
 import os
 import keyboard
 from bs4 import BeautifulSoup
-
+colorama.init()
 should_exit = False
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
@@ -68,7 +68,7 @@ def connect_to_open_wifi(ssid):
     iface = wifi.interfaces()[0]
 
     iface.scan()
-    time.sleep(2)
+    time.sleep(1.5)
     scan_results = iface.scan_results()
 
     for result in scan_results:
@@ -80,7 +80,7 @@ def connect_to_open_wifi(ssid):
             profile = iface.add_network_profile(profile_info)
 
             iface.connect(profile)
-            time.sleep(6)
+            time.sleep(2.5)
 
             if iface.status() == const.IFACE_CONNECTED:
                 print(colorama.Fore.YELLOW+f"INFO - Connected to {ssid}")
@@ -95,9 +95,7 @@ def is_connected():
     
     if iface.status() in [pywifi.const.IFACE_DISCONNECTED, pywifi.const.IFACE_INACTIVE]:
         return False
-    
     if iface.status() in [pywifi.const.IFACE_SCANNING, pywifi.const.IFACE_CONNECTING]:
-        time.sleep(2) 
         if iface.status() != pywifi.const.IFACE_CONNECTED:
             return False
     return True
@@ -112,7 +110,7 @@ def check_internet():
 def connect(read_credentials, connect_to_open_wifi):
     while True:
         if check_internet():
-            time.sleep(3)  
+            time.sleep(1)  
         else:
             credentials = read_credentials()
             print(colorama.Fore.YELLOW + 'INFO - Not Connected -Initiating internet connection...')
@@ -150,7 +148,7 @@ def connect(read_credentials, connect_to_open_wifi):
         prompt(save_credentials)
     else:
         print(colorama.Fore.RED+f"\n{message}\n")
-        time.sleep(4)
+        time.sleep(2.5)
         quit()
 
     # if response.status_code == 200:
@@ -201,5 +199,5 @@ while not should_exit:
     except:
         print(colorama.Fore.YELLOW+'INFO - Waiting to Resolve DNS')
         connect_to_open_wifi(ssid)
-        time.sleep(5)
+        time.sleep(2.5)
 sys.exit()

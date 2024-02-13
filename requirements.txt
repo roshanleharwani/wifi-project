@@ -4,3 +4,4 @@ colorama
 urllib3
 keyboard
 lxml
+bs4
